@@ -1,0 +1,441 @@
+<!-- 重点参数：iconStyle -->
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <!-- 原始地址：//webapi.amap.com/ui/1.0/ui/misc/PositionPicker/examples/positionPicker2.html -->
+   
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+
+      <script type="text/javascript" src="http://webapi.amap.com/maps?v=1.4.2&key=07a695857118bd77834d0b4b821fb497"></script>
+    <title>微动代驾</title>
+    <style>
+    html,
+    body {
+        height: 100%;
+        margin: 0;
+        width: 100%;
+        padding: 0;
+        overflow: hidden;
+        font-size: 13px;
+    }
+            #panel {
+            position: fixed;
+            background-color: white;
+            max-height: 90%;
+            z-index:999;
+            overflow-y: auto;
+            top: 10px;
+            right: 10px;
+            width: 280px;
+        }
+    .map {
+        height: 100%;
+        width: 100%;
+     /*   float: left;*/
+    }
+    
+    #right {
+        color: #444;
+        background-color: #f8f8f8;
+        width: 100%;
+/*        float: left;
+        height: 100%;*/
+    }
+    
+    #start,
+    #stop,
+    #right input {
+        margin: 4px;
+        margin-left: 15px;
+    }
+    
+    .title {
+        width: 100%;
+        background-color: #dadada
+    }
+    
+    button {
+        border: solid 1px;
+        margin-left: 15px;
+        background-color: #dadafa;
+    }
+    
+    .c {
+        font-weight: 600;
+        padding-left: 15px;
+        padding-top: 4px;
+    }
+    
+    #lnglat,
+    #address,
+    #nearestJunction,
+    #nearestRoad,
+    #nearestPOI,
+    .title {
+        padding-left: 15px;
+    }
+    .hom{
+       width: 100%;
+       height: 100%;
+       margin: 0 auto;
+    }
+    </style>
+</head>
+
+<body>
+<!--     <div id="container" class="map" tabindex="0"></div>
+    <div id="panel"></div> -->
+    <div id='right'>
+        <div style="display:none;">
+            <div class='title' style="display:none;">选择模式</div>
+            <input type='radio' name='mode' value='dragMap' style="display:none;">拖拽地图模式</input>
+            </br>
+            <input type='radio' name='mode' value='dragMarker' checked style="display:none;">拖拽Marker模式</input>
+        </div>
+        <div>
+            <button id='start' style="display:none;">开始选点</button>
+            <button id='stop' style="display:none;">关闭选点</button>
+        </div>
+        <div>
+            <input type="text" id="home" class="hom" placeholder="点击选择在哪儿上车" ><br>
+          <input type="text" id="go" class="hom" placeholder="点击选择目的地" >
+           <div id="panel"></div><br>
+           <input type="button" id="but" value="呼叫出租车" class="hom">
+
+
+            <div class='title' style="display:none;" >选址结果</div>
+            <div class='c' style="display:none;" >经纬度:</div>
+            <div id='lnglat' style="display:none;" ></div>
+            <div class='c' style="display:none;" >在哪儿上车: </div>
+            <!-- style="display:none;" -->
+            <div id='address' class="aa" style="display:none;" ></div>
+            <div class='c' style="display:none;" >最近的路口:</div>
+            <div id='nearestJunction' style="display:none;" ></div>
+            <div class='c' style="display:none;" >最近的路:</div>
+            <div id='nearestRoad' style="display:none;" ></div>
+            <div class='c' style="display:none;" >最近的POI:</div>
+            <div id='nearestPOI' style="display:none;"></div>
+        </div>
+    </div>
+        <div id="container" class="map" tabindex="0"></div>
+    
+    <script type="text/javascript" src='//webapi.amap.com/maps?v=1.4.2&key=07a695857118bd77834d0b4b821fb497&plugin=AMap.ToolBar'></script>
+     <script src="./jquery.min.js"></script>
+     <script type="text/javascript" src="//cache.amap.com/lbs/static/addToolbar.js"></script>
+    <!-- UI组件库 1.0 -->
+    <script src="//webapi.amap.com/ui/1.0/main.js?v=1.0.11"></script>
+     <script type="text/javascript" src="//cache.amap.com/lbs/static/addToolbar.js"></script>
+    <script type="text/javascript">
+$('#home').click(function(){
+
+
+
+    AMapUI.loadUI(['misc/PositionPicker'], function(PositionPicker) {
+        var map = new AMap.Map('container', {
+            zoom: 12,
+             resizeEnable: true,
+            scrollWheel: false,
+        })
+
+
+/***************************************
+由于Chrome、IOS10等已不再支持非安全域的浏览器定位请求，为保证定位成功率和精度，请尽快升级您的站点到HTTPS。
+***************************************/
+    var map,geolocation;
+    //加载地图，调用浏览器定位服务
+    map = new AMap.Map('container', {
+            zoom: 13,
+            resizeEnable: true,
+    });
+
+AMap.plugin(['AMap.Autocomplete','AMap.PlaceSearch'],function(){
+     var autoOptions = {
+          city: "成都", //城市，默认全国
+          input: "home"//使用联想输入的input的id
+     };
+     autocomplete= new AMap.Autocomplete(autoOptions);
+     var placeSearch = new AMap.PlaceSearch({
+              city:'成都',
+              map:map
+     });
+     AMap.event.addListener(autocomplete, "select", function(e){
+           //TODO 针对选中的poi实现自己的功能
+           placeSearch.search(e.poi.name)
+     });
+ }); 
+
+
+    map.plugin('AMap.Geolocation', function() {
+        geolocation = new AMap.Geolocation({
+            zoom: 16,
+            enableHighAccuracy: true,//是否使用高精度定位，默认:true
+            timeout: 10000,          //超过10秒后停止定位，默认：无穷大
+            buttonOffset: new AMap.Pixel(10, 20),//定位按钮与设置的停靠位置的偏移量，默认：Pixel(10, 20)
+            zoomToAccuracy: false,      //定位成功后调整地图视野范围使定位位置及精度范围视野内可见，默认：false
+            zoom: 13,
+            buttonPosition:'RB'
+        });
+        map.addControl(geolocation);
+        geolocation.getCurrentPosition();
+        AMap.event.addListener(geolocation, 'complete', onComplete);//返回定位信息
+        AMap.event.addListener(geolocation, 'error', onError);      //返回定位出错信息
+    });
+    //解析定位结果
+    function onComplete(data) {
+        var str=['定位成功'];
+        str.push('经度：' + data.position.getLng());
+        str.push('纬度：' + data.position.getLat());
+        if(data.accuracy){
+             str.push('精度：' + data.accuracy + ' 米');
+        }//如为IP精确定位结果则没有精度信息
+        str.push('是否经过偏移：' + (data.isConverted ? '是' : '否'));
+        document.getElementById('tip').innerHTML = str.join('<br>');
+    }
+    //解析定位错误信息
+    function onError(data) {
+        document.getElementById('tip').innerHTML = '定位失败';
+    }
+
+
+
+        var positionPicker = new PositionPicker({
+            mode: 'dragMap',
+            map: map,
+            iconStyle: { //自定义外观
+                url: '//webapi.amap.com/ui/1.0/assets/position-picker2.png',
+                ancher: [24, 40],
+                size: [48, 48]
+            }
+        });
+
+        positionPicker.on('success', function(positionResult) {
+
+            document.getElementById('lnglat').innerHTML = positionResult.position;
+            document.getElementById('address').innerHTML = positionResult.address;
+
+            document.getElementById("home").value=positionResult.address;
+
+            document.getElementById('nearestJunction').innerHTML = positionResult.nearestJunction;
+            document.getElementById('nearestRoad').innerHTML = positionResult.nearestRoad;
+            document.getElementById('nearestPOI').innerHTML = positionResult.nearestPOI;
+        });
+
+        positionPicker.on('fail', function(positionResult) {
+            document.getElementById('lnglat').innerHTML = ' ';
+            document.getElementById('address').innerHTML = ' ';
+            document.getElementById('nearestJunction').innerHTML = ' ';
+            document.getElementById('nearestRoad').innerHTML = ' ';
+            document.getElementById('nearestPOI').innerHTML = ' ';
+        });
+        var onModeChange = function(e) {
+
+            positionPicker.setMode(e.target.value);
+        }
+        var startButton = document.getElementById('start');
+        var stopButton = document.getElementById('stop');
+        var dragMapMode = document.getElementsByName('mode')[0];
+        var dragMarkerMode = document.getElementsByName('mode')[1];
+        AMap.event.addDomListener(startButton, 'click', function() {
+            positionPicker.start(map.getBounds().getSouthWest())
+        })
+        AMap.event.addDomListener(stopButton, 'click', function(){
+            positionPicker.stop();
+        })
+        AMap.event.addDomListener(dragMapMode, 'change', onModeChange)
+        AMap.event.addDomListener(dragMarkerMode, 'change', onModeChange);
+        positionPicker.start();
+
+        map.addControl(new AMap.ToolBar({
+            liteStyle: true
+        }))
+
+    });
+
+})
+    // var h = address.innerText;
+    // document.getElementById("home").value=h;
+//  var  h = $('#address').text();
+// console.log(h);
+//   $("#home").val(h);
+
+$("#go").click(function(){
+    AMapUI.loadUI(['misc/PositionPicker'], function(PositionPicker) {
+        var map = new AMap.Map('container', {
+            zoom: 16,
+            resizeEnable: true,
+            scrollWheel: false,
+        })
+/***************************************
+由于Chrome、IOS10等已不再支持非安全域的浏览器定位请求，为保证定位成功率和精度，请尽快升级您的站点到HTTPS。
+***************************************/
+    var map,geolocation;
+    //加载地图，调用浏览器定位服务
+    map = new AMap.Map('container', {
+zoom: 13,
+        resizeEnable: true,
+    });
+AMap.plugin(['AMap.Autocomplete','AMap.PlaceSearch'],function(){
+     var autoOptions = {
+          city: "成都", //城市，默认全国
+          input: "go"//使用联想输入的input的id
+     };
+     autocomplete= new AMap.Autocomplete(autoOptions);
+     var placeSearch = new AMap.PlaceSearch({
+              city:'成都',
+              map:map
+     });
+     AMap.event.addListener(autocomplete, "select", function(e){
+           //TODO 针对选中的poi实现自己的功能
+           placeSearch.search(e.poi.name)
+     });
+ }); 
+
+
+    map.plugin('AMap.Geolocation', function() {
+        geolocation = new AMap.Geolocation({
+            enableHighAccuracy: true,//是否使用高精度定位，默认:true
+            timeout: 10000,          //超过10秒后停止定位，默认：无穷大
+            buttonOffset: new AMap.Pixel(10, 20),//定位按钮与设置的停靠位置的偏移量，默认：Pixel(10, 20)
+            zoomToAccuracy: false,      //定位成功后调整地图视野范围使定位位置及精度范围视野内可见，默认：false
+            zoom: 13,
+            buttonPosition:'RB'
+        });
+        map.addControl(geolocation);
+        geolocation.getCurrentPosition();
+        AMap.event.addListener(geolocation, 'complete', onComplete);//返回定位信息
+        AMap.event.addListener(geolocation, 'error', onError);      //返回定位出错信息
+    });
+    //解析定位结果
+    function onComplete(data) {
+        var str=['定位成功'];
+        str.push('经度：' + data.position.getLng());
+        str.push('纬度：' + data.position.getLat());
+        if(data.accuracy){
+             str.push('精度：' + data.accuracy + ' 米');
+        }//如为IP精确定位结果则没有精度信息
+        str.push('是否经过偏移：' + (data.isConverted ? '是' : '否'));
+        document.getElementById('tip').innerHTML = str.join('<br>');
+    }
+    //解析定位错误信息
+    function onError(data) {
+        document.getElementById('tip').innerHTML = '定位失败';
+    }
+
+
+
+        var positionPicker = new PositionPicker({
+            mode: 'dragMap',
+            map: map,
+            iconStyle: { //自定义外观
+                url: '//webapi.amap.com/ui/1.0/assets/position-picker2.png',
+                ancher: [24, 40],
+                size: [48, 48]
+            }
+        });
+
+        positionPicker.on('success', function(positionResult) {
+
+          //  document.getElementById('lnglat').innerHTML = positionResult.position;
+           // document.getElementById('address').innerHTML = positionResult.address;
+
+            document.getElementById("go").value=positionResult.address;
+
+           // document.getElementById('nearestJunction').innerHTML = positionResult.nearestJunction;
+           // document.getElementById('nearestRoad').innerHTML = positionResult.nearestRoad;
+           // document.getElementById('nearestPOI').innerHTML = positionResult.nearestPOI;
+        });
+
+        positionPicker.on('fail', function(positionResult) {
+            document.getElementById('lnglat').innerHTML = ' ';
+            document.getElementById('address').innerHTML = ' ';
+            document.getElementById('nearestJunction').innerHTML = ' ';
+            document.getElementById('nearestRoad').innerHTML = ' ';
+            document.getElementById('nearestPOI').innerHTML = ' ';
+        });
+        var onModeChange = function(e) {
+
+            positionPicker.setMode(e.target.value);
+        }
+        var startButton = document.getElementById('start');
+        var stopButton = document.getElementById('stop');
+        var dragMapMode = document.getElementsByName('mode')[0];
+        var dragMarkerMode = document.getElementsByName('mode')[1];
+        AMap.event.addDomListener(startButton, 'click', function() {
+            positionPicker.start(map.getBounds().getSouthWest())
+        })
+        AMap.event.addDomListener(stopButton, 'click', function() {
+            positionPicker.stop();
+        })
+        AMap.event.addDomListener(dragMapMode, 'change', onModeChange)
+        AMap.event.addDomListener(dragMarkerMode, 'change', onModeChange);
+        positionPicker.start();
+
+        map.addControl(new AMap.ToolBar({
+            liteStyle: true
+        }))
+    });
+})
+$('#but').click(function(){
+//     AMap.service('AMap.Transfer',function(){//回调函数
+//     //实例化Transfer
+//     transfer= new AMap.Transfer({city: '成都'});
+//     //TODO: 使用transfer对象调用公交换乘相关的功能
+// })
+// AMap.service('AMap.Walking',function(){//回调函数
+//     //实例化Walking
+//     walking= new AMap.Walking({city: '成都'});
+//     //TODO: 使用walking对象调用步行路径规划相关的功能
+// })
+
+
+AMap.service('AMap.Driving',function(){//回调函数
+        //实例化Driving
+     var map = new AMap.Map("container", {
+        resizeEnable: true,
+       // center: [116.397428, 39.90923],//地图中心点
+        zoom: 13 //地图显示的缩放级别
+    });
+var home=$('#home').val();
+
+var to=$('#go').val();
+
+//$('.amap-markers').text(kers);
+        var driving = new AMap.Driving({
+        map: map,
+        // panel: "panel"
+    });
+
+    driving.search([
+        {keyword: home,city:'成都'},
+        {keyword: to,city:'成都'}
+    ]);
+//          driving.search([{keyword:home,city:'成都'},{keyword:to}], function(status, result){
+//     //TODO 解析返回结果，自己生成操作界面和地图展示界面
+// });
+})
+var kers=$('.amap-markers').html();
+
+if ($('.plan-nobus').css('display')=='none') {
+$('.amap-markers').html(kers)
+
+}
+// var bus=$('.plan-nobus').css();
+console.log(kers);
+$(".planTitle").attr("href","javascript:void(0)" );
+$(".").unbind( "click" );
+$(".amap-lib-driving").attr("href","javascript:void(0)" );
+    //TODO: 使用driving对象调用驾车路径规划相关的功能
+
+
+    //构造路线导航类
+ 
+    // // 根据起终点名称规划驾车导航路线
+
+})
+
+    </script>
+</body>
+
+</html>
