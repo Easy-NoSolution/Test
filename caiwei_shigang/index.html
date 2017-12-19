@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<link rel="stylesheet" href="./fonts/css/font-awesome.min.css">
+		 <link rel="stylesheet" href="http://cache.amap.com/lbs/static/main1119.css"/>
+    <script type="text/javascript" src="http://webapi.amap.com/maps?v=1.4.2&key=c567c2f4b34b804ea1910ab8cb7b151d&plugin=AMap.Autocomplete,AMap.PlaceSearch"></script>
+    <script type="text/javascript" src="http://cache.amap.com/lbs/static/addToolbar.js"></script>
+	</head>
+	<style>
+	body{
+		margin: 0;
+		padding: 0;
+	}
+	ul,li{
+		list-style: none;
+		margin: auto;
+		padding: 0;
+	}
+		#header{
+			width: 100%;
+			height: 36px;
+			line-height: 36px;
+			text-align: center;
+			margin: auto;
+			padding:0;
+			position: fixedposition: fixed;
+			
+		}
+		.gray{
+			background-color: #707070;
+		}
+		#header li{
+			list-style: none;
+			float: left;
+		}
+		#content{
+			margin: 5px auto;
+			text-align: center;
+		}
+		#content li {
+			padding: 20px auto;
+			width: 96%;
+			height: 60px;
+			border:1px solid #ccc;
+		}
+		#content li input{
+			height: 80%;
+			width:80%;
+			padding: 10% auto;
+		}
+		.none{
+			display: none;
+		}
+	</style>
+	<body>
+		<ul id="header" class="gray">
+			<li style="width: 15%;border-right: 2px solid black;"><i class="fa fa-reply" aria-hidden="true"></i></li>
+			<li style="width: 50%;">微动出行</li>
+			<li style="width: 15%;float: right;"><i class="fa fa-ellipsis-v" aria-hidden="true"></i></li>
+		</ul>
+			
+		<div id="content">
+			<ul>
+				<li>室内与跨城 顺风车</li>
+				<li><input type="text" name="" id="btn_begin" value="" /></li>
+				<li><input type="text" name="" id="btn_end" value="" /></li>
+				<li><span style="margin-left: 10px;">乘车人数</span><span style="margin-left: 10px;">选择时间</span> </li>
+				<li>￥ 起</li>
+				<li><input type="button" name="" id="" value="确认发布" style="width: 50%;color: white;background-color: #40f8ff;"/></li>
+				<li><input type="button" name="" id="" value="成为车主，立即接单" style="width: 50%;color: white;background-color: #434343;"/></li>
+				<li></li>
+				<li></li>
+			</ul>
+			
+		</div>
+		<div id="footer"></div>
+		<div id='container' class="none"></div>
+	</body>
+</html>
+<script>
+	var begin = document.getElementById('btn_begin');
+	var end = document.getElementById('btn_end');
+	 var map, geolocation;
+    //加载地图，调用浏览器定位服务
+    map = new AMap.Map('container', {
+        resizeEnable: true
+    });
+     var autoOptions = {
+        input: "btn_end"
+    };
+    var auto = new AMap.Autocomplete(autoOptions);
+    var placeSearch = new AMap.PlaceSearch({
+        map: map
+    });  //构造地点查询类
+    AMap.event.addListener(auto, "select", select);//注册监听，当选中某条记录时会触发
+    function select(e) {
+        placeSearch.setCity(e.poi.adcode);
+        placeSearch.search(e.poi.name);  //关键字查询查询
+    }
+    map.plugin('AMap.Geolocation', function() {
+        geolocation = new AMap.Geolocation({
+            enableHighAccuracy: true,//是否使用高精度定位，默认:true
+            timeout: 10000,          //超过10秒后停止定位，默认：无穷大
+            buttonOffset: new AMap.Pixel(10, 20),//定位按钮与设置的停靠位置的偏移量，默认：Pixel(10, 20)
+            zoomToAccuracy: true,      //定位成功后调整地图视野范围使定位位置及精度范围视野内可见，默认：false
+            buttonPosition:'LB',
+            showButton:false
+        });
+        map.addControl(geolocation);
+        geolocation.getCurrentPosition(function(status,result){
+        	console.log(status+result);
+    		begin.value = result.formattedAddress;
+        	
+        });
+        AMap.event.addListener(geolocation, 'complete', onComplete);//返回定位信息
+        AMap.event.addListener(geolocation, 'error', onError);      //返回定位出错信息
+    });
+    //解析定位结果
+    function onComplete(data) {
+//  	console.log(data.formattedAddress);
+
+        /*var str=['定位成功'];
+        str.push('经度：' + data.position.getLng());
+        str.push('纬度：' + data.position.getLat());
+        if(data.accuracy){
+             str.push('精度：' + data.accuracy + ' 米');
+        }//如为IP精确定位结果则没有精度信息
+        str.push('是否经过偏移：' + (data.isConverted ? '是' : '否'));
+        document.getElementById('tip').innerHTML = str.join('<br>');*/
+    }
+    //解析定位错误信息
+    function onError(data) {
+    	alert('定位失败');
+//      document.getElementById('tip').innerHTML = '定位失败';
+    }
+	begin.onfocus = function(){
+		window.location.href = 'dw.html';
+	}
+</script>

@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <!-- 原始地址：//webapi.amap.com/ui/1.0/ui/misc/PositionPicker/examples/positionPicker.html -->
+    <base href="//webapi.amap.com/ui/1.0/ui/misc/PositionPicker/examples/" />
+    <meta charset="utf-8">
+		<link rel="stylesheet" href="./fonts/css/font-awesome.min.css">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    
+    <title>拖拽选址</title>
+    <style>
+    html,
+    body {
+        height: 100%;
+        margin: 0;
+        width: 100%;
+        padding: 0;
+        overflow: hidden;
+        font-size: 13px;
+    }
+   body{
+		margin: 0;
+		padding: 0;
+	}
+	ul,li{
+		list-style: none;
+		margin: auto;
+		padding: 0;
+	}
+    #header{
+			width: 100%;
+			height: 36px;
+			line-height: 36px;
+			text-align: center;
+			margin: auto;
+			padding:0;
+			/*position: fixed;*/
+			z-index: 99999999;
+		}
+		.gray{
+			background-color: #707070;
+		}
+		#header li{
+			list-style: none;
+			float: left;
+		}
+    .map {
+        height: 100%;
+        width: 100%;
+        /*float: left;*/
+    }
+    
+    #right {
+        color: #444;
+        background-color: #f8f8f8;
+        width: 40%;
+        float: left;
+        height: 100%;
+    }
+    
+    #start,
+    #stop,
+    #right input {
+        margin: 4px;
+        margin-left: 15px;
+    }
+    
+    .title {
+        width: 100%;
+        background-color: #dadada
+    }
+    
+    button {
+        border: solid 1px;
+        margin-left: 15px;
+        background-color: #dadafa;
+    }
+    
+    .c {
+        font-weight: 600;
+        padding-left: 15px;
+        padding-top: 4px;
+    }
+    
+    #lnglat,
+    #address,
+    #nearestJunction,
+    #nearestRoad,
+    #nearestPOI,
+    .title {
+        padding-left: 15px;
+    }
+    .none{
+    	display: none;
+    }
+    #search{
+    	width: 100%;
+		height: 36px;
+		line-height: 36px;
+		text-align: center;
+		margin: auto;
+		padding:0;			
+    }
+    #search li{
+    	display: inline-block;
+    }
+    </style>
+</head>
+
+<body>
+
+	<ul id="header" class="gray">
+			<li style="width: 15%;border-right: 2px solid black;"><i class="fa fa-reply" aria-hidden="true"></i></li>
+			<li style="width: 50%;">微动出行</li>
+			<li style="width: 15%;float: right;"><i class="fa fa-ellipsis-v" aria-hidden="true"></i></li>
+	</ul>
+	<ul id="search">
+		<li style="width: 20%;"><select name="city" id="">
+			<option value="">成都</option>
+			<option value="">绵阳</option>
+			<option value="">广元</option>
+			<option value="">攀枝花</option>
+		</select></li>
+		<li style="width：80%;"><input type="text" name="" id="btn_begin" value=""/></li>
+	</ul>
+    <div id="container" class="map" tabindex="0"></div>
+    <div id='right' class="none">
+        <div>
+            <div class='title'>选择模式</div>
+            <input type='radio' name='mode' value='dragMap' checked>拖拽地图模式</input>
+            </br>
+            <input type='radio' name='mode' value='dragMarker'>拖拽Marker模式</input>
+        </div>
+        <div>
+            <button id='start'>开始选点</button>
+            <button id='stop'>关闭选点</button>
+        </div>
+        <div>
+            <div class='title'>选址结果</div>
+            <div class='c'>经纬度:</div>
+            <div id='lnglat'></div>
+            <div class='c'>地址:</div>
+            <div id='address'></div>
+            <div class='c'>最近的路口:</div>
+            <div id='nearestJunction'></div>
+            <div class='c'>最近的路:</div>
+            <div id='nearestRoad'></div>
+            <div class='c'>最近的POI:</div>
+            <div id='nearestPOI'></div>
+        </div>
+    </div>
+    <script type="text/javascript" src='//webapi.amap.com/maps?v=1.4.2&key=c567c2f4b34b804ea1910ab8cb7b151d&plugin=AMap.ToolBar'></script>
+    <!-- UI组件库 1.0 -->
+    <script src="//webapi.amap.com/ui/1.0/main.js?v=1.0.11"></script>
+    <script type="text/javascript">
+	var begin = document.getElementById('btn_begin');
+    
+    //加载拖拽控件模块
+    AMapUI.loadUI(['misc/PositionPicker'], function(PositionPicker) {
+    	//实例化一个地图对象
+        var map = new AMap.Map('container', {
+            zoom: 13,
+            scrollWheel: true
+        })
+        //添加定位
+        map.plugin('AMap.Geolocation', function () {
+		    geolocation = new AMap.Geolocation({
+		        enableHighAccuracy: true,//是否使用高精度定位，默认:true
+		        timeout: 10000,          //超过10秒后停止定位，默认：无穷大
+		        maximumAge: 0,           //定位结果缓存0毫秒，默认：0
+		        convert: true,           //自动偏移坐标，偏移后的坐标为高德坐标，默认：true
+		        showButton: true,        //显示定位按钮，默认：true
+		        buttonPosition: 'LB',    //定位按钮停靠位置，默认：'LB'，左下角
+		        buttonOffset: new AMap.Pixel(10, 20),//定位按钮与设置的停靠位置的偏移量，默认：Pixel(10, 20)
+		        showMarker: false,        //定位成功后在定位到的位置显示点标记，默认：true
+		        showCircle: true,        //定位成功后用圆圈表示定位精度范围，默认：true
+		        panToLocation: true,     //定位成功后将定位到的位置作为地图中心点，默认：true
+		        zoomToAccuracy:true      //定位成功后调整地图视野范围使定位位置及精度范围视野内可见，默认：false
+		    });
+		     map.addControl(geolocation);
+	        geolocation.getCurrentPosition(function(status,result){
+	        if(status === 'complete'){
+	        	begin.value = result.formattedAddress;
+	        }else{
+	        	alert('定位失败！');
+	        }
+    		
+        	
+        });
+        });
+   
+        //创建一个拖拽选址类
+        var positionPicker = new PositionPicker({
+            mode: 'dragMap',//设定为拖拽地图模式，可选'dragMap'、'dragMarker'，默认为'dragMap'
+            map: map,//依赖地图对象
+            iconStyle: { //自定义外观
+                url: '//webapi.amap.com/ui/1.0/assets/position-picker2.png',
+                ancher: [24, 40],
+                size: [48, 48]
+            }
+        });
+
+        positionPicker.on('success', function(positionResult) {
+        	begin.value =  positionResult.address;
+            document.getElementById('lnglat').innerHTML = positionResult.position;
+            document.getElementById('address').innerHTML = positionResult.address;
+            document.getElementById('nearestJunction').innerHTML = positionResult.nearestJunction;
+            document.getElementById('nearestRoad').innerHTML = positionResult.nearestRoad;
+            document.getElementById('nearestPOI').innerHTML = positionResult.nearestPOI;
+        });
+        positionPicker.on('fail', function(positionResult) {
+            document.getElementById('lnglat').innerHTML = ' ';
+            document.getElementById('address').innerHTML = ' ';
+            document.getElementById('nearestJunction').innerHTML = ' ';
+            document.getElementById('nearestRoad').innerHTML = ' ';
+            document.getElementById('nearestPOI').innerHTML = ' ';
+        });
+        var onModeChange = function(e) {
+            positionPicker.setMode(e.target.value)
+        }
+        var startButton = document.getElementById('start');
+        var stopButton = document.getElementById('stop');
+        var dragMapMode = document.getElementsByName('mode')[0];
+        var dragMarkerMode = document.getElementsByName('mode')[1];
+        AMap.event.addDomListener(startButton, 'click', function() {
+            positionPicker.start(map.getBounds().getSouthWest())
+        })
+        AMap.event.addDomListener(stopButton, 'click', function() {
+            positionPicker.stop();
+        })
+        AMap.event.addDomListener(dragMapMode, 'change', onModeChange)
+        AMap.event.addDomListener(dragMarkerMode, 'change', onModeChange);
+        positionPicker.start();
+        map.panBy(0, 1);
+
+        map.addControl(new AMap.ToolBar({
+            liteStyle: true
+        }))
+    });
+    </script>
+</body>
+
+</html>
